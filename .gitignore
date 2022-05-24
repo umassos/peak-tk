@@ -1,0 +1,11 @@
+dist/
+*.pyc
+.project
+.pydevproject
+*.log
+build/
+.ipynb_checkpoints/
+.DS_Store
+*.egg-info
+__pycache__
+tests/eversource_hp2/

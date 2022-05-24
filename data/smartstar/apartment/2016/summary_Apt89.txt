@@ -1,0 +1,5 @@
+time, power [kW]
+year:2016
+Duration:2016-01-01 00:00:00-2016-12-28 22:14:00
+Frequency:0 days 00:01:00
+
