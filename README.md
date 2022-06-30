@@ -56,6 +56,8 @@ Here is the list of things that we think it would be great to have:
 - [ ] Support walk forward validation
 - [ ] And, of course, have more algorithms
 
+If you would like to contribute, please feel free to send a pull request and email us! 
+
 # Bug report
 
 If you found bug or need help with the toolkit, please feel free to email [us] 
