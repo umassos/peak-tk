@@ -45,6 +45,7 @@ Here is the list that we currently are working on and will finish it:
 
 - [ ] Fixing `pip install`. We are trying to make sure that it work on Apple M1.
 - [ ] Updating the unified interface. (A few algorithms left) 
+- [ ] Adding Sphinx docs
 - [ ] Adding example for all type of peak forecasting algorithms.
 
 
