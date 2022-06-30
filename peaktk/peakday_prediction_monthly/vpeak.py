@@ -19,7 +19,7 @@ class VPeak_Selection:
 		self.dynamic_thres = False
 		pass
 
-	def train(self, historical_daily_demand, one_year_daily_demand, quantile, top_k, update_frequency=5, alpha=0.01, beta=0.01, dynamic_thres=False, stingy=False):
+	def train(self, historical_daily_demand, one_year_daily_demand, top_k, quantile=0.86, update_frequency=5, alpha=0.01, beta=0.01, dynamic_thres=False, stingy=False):
 		#input: monthly_historical_demand (12, x)
 		if len(historical_daily_demand) != 12:
 			print("ERROR: expected data of shape (12, x), 12 months")

@@ -2,110 +2,169 @@
 import datetime
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 
 def scale(data_df, min=0, max=1):
+    # 1: Min Max Scale
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaled_data = scaler.fit_transform(data_df.values)
+    scaled_df = pd.DataFrame(scaled_data)
+    scaled_df.columns = data_df.columns
+    scaled_df.index = data_df.index
+    
+    new_scaler = MinMaxScaler(feature_range=(0, 1))
+
+    y_index = data_df.columns.tolist().index("Load")
+
+    new_scaler.min_ , new_scaler.scale_ = scaler.min_[y_index], scaler.scale_[y_index]
+    return (scaled_df, new_scaler)
+
+def scale_and_combine(data_df, min=0, max=1):
     # 1: Min Max Scale
     scaler = MinMaxScaler(feature_range=(0, 1))
     scaled_data = scaler.fit_transform(daily_df.values)
     # 2: merge with same day last week X: 48 hr, y: 24 hr
     db_df = pd.DataFrame(scaled_data)
     db_df.columns = daily_df.columns
+    db_df.index = daily_df.index
     X_scaled, y_scaled, idx_scaled = preprocessing.combine_seven_days_before_all(db_df, "Load")
 
     return (X_scaled, y_scaled, idx_scaled)
 
-def create_dataset(df, previous=1):
-    dataX, dataY = [], []
-    for i in range(len(df)-previous-1):
-        a = df[i:(i+previous), 0]
-        dataX.append(a)
-        dataY.append(df[i + previous, 0])
-    return np.array(dataX), np.array(dataY)
+def create_dataset(scaled_data, y_columns="Load"):
+
+    X = []
+    y = []
+    idx = []
+
+    for i in range(0, scaled_data.shape[0]-7, 1):
+#         print(daily_df.iloc[i+7])
+        temp_x = scaled_data.iloc[i:i+8].copy().values
+        temp_x[-1][-1] = 0
+        temp_y = scaled_data.iloc[i+7:i+8][y_columns].copy().values
+        X.append(temp_x)
+        y.append(temp_y)
+
+        idx.append(scaled_data.iloc[i+7:i+8].index[0])
+
+    X = np.asarray(X).astype('float32')
+    y = np.asarray(y)
+
+    return X, y, idx
+
+def create_dataset_hourly(data_df, y_column):
+
+    X = []
+    y = []
+    idx = []
+    column_size = len(data_df.columns)
+    for i in range(0, data_df.shape[0]-(7*24), 24):
+        a = data_df.iloc[i:i+(1*24)].copy()
+        b = data_df.iloc[i+(7*24):i+(8*24)].copy()
+        temp_y = b[y_column].values
+        b[y_column] = 0
+        temp_x = pd.concat([a,b]).values
+        X.append(temp_x)
+        y.append(temp_y)
+        idx.append(data_df.iloc[i+(7*24):i+(8*24)].index)
+#     X = data_df.iloc[0:data_df.shape[0]-7]
+    X = np.asarray(X).astype('float32')
+    y = np.asarray(y)
+    return X, y, idx
+
+
+# def create_dataset(df, previous=1):
+#     dataX, dataY = [], []
+#     for i in range(len(df)-previous-1):
+#         a = df[i:(i+previous), 0]
+#         dataX.append(a)
+#         dataY.append(df[i + previous, 0])
+#     return np.array(dataX), np.array(dataY)
 
 def combine_sameday_week_before_hourly_data(data_df, y_column):
 
-	X = []
-	y = []
-	idx = []
-	column_size = len(data_df.columns)
-	for i in range(0, data_df.shape[0]-(7*24), 24):
-		a = data_df.iloc[i:i+(1*24)].copy()
-		b = data_df.iloc[i+(7*24):i+(8*24)].copy()
-		b[y_column] = 0
-		temp_x = pd.concat([a,b]).stack().to_frame().T
-		temp_x.columns = [str(i) for i in range(0,(24*column_size*2))]
-		X.append(temp_x)
-		temp_y = data_df.iloc[i+(7*24):i+(8*24),data_df.columns.get_loc(y_column)] # load data 
-		y.append(temp_y.values)
-		
-		idx.append(temp_y.index.values)
+    X = []
+    y = []
+    idx = []
+    column_size = len(data_df.columns)
+    for i in range(0, data_df.shape[0]-(7*24), 24):
+        a = data_df.iloc[i:i+(1*24)].copy()
+        b = data_df.iloc[i+(7*24):i+(8*24)].copy()
+        b[y_column] = 0
+        temp_x = pd.concat([a,b]).stack().to_frame().T
+        temp_x.columns = [str(i) for i in range(0,(24*column_size*2))]
+        X.append(temp_x)
+        temp_y = data_df.iloc[i+(7*24):i+(8*24),data_df.columns.get_loc(y_column)] # load data 
+        y.append(temp_y.values)
+        
+        idx.append(temp_y.index.values)
 #     X = data_df.iloc[0:data_df.shape[0]-7]
-	X = pd.concat(X, axis=0)
-	y = np.asarray(y, dtype=np.float32)
-	return X, y, idx
+    X = pd.concat(X, axis=0)
+    y = np.asarray(y, dtype=np.float32)
+    return X, y, idx
 
 def combine_sameday_week_before_hourly_data2(data_df, y_column):
 
-	X = []
-	y = []
-	idx = []
-	column_size = len(data_df.columns)
-	for i in range(0, data_df.shape[0]-(7*24), 24):
-		a = data_df.iloc[i:i+(1*24)].copy()
-		b = data_df.iloc[i+(7*24):i+(8*24)].copy()
-		temp_y = b[y_column].values
-		b[y_column] = 0
-		temp_x = pd.concat([a,b]).values
-		X.append(temp_x)
-		y.append(temp_y)
-		idx.append(data_df.iloc[i+(7*24):i+(8*24)].index)
+    X = []
+    y = []
+    idx = []
+    column_size = len(data_df.columns)
+    for i in range(0, data_df.shape[0]-(7*24), 24):
+        a = data_df.iloc[i:i+(1*24)].copy()
+        b = data_df.iloc[i+(7*24):i+(8*24)].copy()
+        temp_y = b[y_column].values
+        b[y_column] = 0
+        temp_x = pd.concat([a,b]).values
+        X.append(temp_x)
+        y.append(temp_y)
+        idx.append(data_df.iloc[i+(7*24):i+(8*24)].index)
 #     X = data_df.iloc[0:data_df.shape[0]-7]
-	X = np.asarray(X).astype('float32')
-	y = np.asarray(y)
-	return X, y, idx
+    X = np.asarray(X).astype('float32')
+    y = np.asarray(y)
+    return X, y, idx
 
 def combine_sameday_week_before_daily_data(data_df, y_index):
 
-	X = []
-	y = []
-	idx = []
-	column_size = len(data_df.columns)
-	for i in range(0, data_df.shape[0]-7, 1):
-		a = data_df.iloc[i:i+(1)].copy()
-		b = data_df.iloc[i+(7):i+(8)].copy()
-		b[y_index] = 0
-		temp_x = pd.concat([a,b]).stack().to_frame().T
-		temp_x.columns = [str(i) for i in range(0,(column_size*2))]
-		X.append(temp_x)
-		temp_y = data_df[y_index].iloc[i+(7):i+(8)] # load data 
-		y.append(temp_y.values)
-		
-		idx.append(temp_y.index.values)
+    X = []
+    y = []
+    idx = []
+    column_size = len(data_df.columns)
+    for i in range(0, data_df.shape[0]-7, 1):
+        a = data_df.iloc[i:i+(1)].copy()
+        b = data_df.iloc[i+(7):i+(8)].copy()
+        b[y_index] = 0
+        temp_x = pd.concat([a,b]).stack().to_frame().T
+        temp_x.columns = [str(i) for i in range(0,(column_size*2))]
+        X.append(temp_x)
+        temp_y = data_df[y_index].iloc[i+(7):i+(8)] # load data 
+        y.append(temp_y.values)
+        
+        idx.append(temp_y.index.values)
 #     X = data_df.iloc[0:data_df.shape[0]-7]
-	X = pd.concat(X, axis=0)
-	y = np.asarray(y, dtype=np.float32)
-	return X, y, idx
+    X = pd.concat(X, axis=0)
+    y = np.asarray(y, dtype=np.float32)
+    return X, y, idx
 
 
 def combine_seven_days_before_all(data_df, y_columns):
-	X = []
-	y = []
-	idx = []
+    X = []
+    y = []
+    idx = []
 
-	for i in range(0, data_df.shape[0]-7, 1):
+    for i in range(0, data_df.shape[0]-7, 1):
 #         print(daily_df.iloc[i+7])
-		temp_x = data_df.iloc[i:i+8].copy().values
-		temp_x[-1][-1] = 0
-		temp_y = data_df.iloc[i+7:i+8][y_columns].copy().values
-		X.append(temp_x)
-		y.append(temp_y)
+        temp_x = data_df.iloc[i:i+8].copy().values
+        temp_x[-1][-1] = 0
+        temp_y = data_df.iloc[i+7:i+8][y_columns].copy().values
+        X.append(temp_x)
+        y.append(temp_y)
 
-		idx.append(data_df.iloc[i+7:i+8].index.values)
+        idx.append(data_df.iloc[i+7:i+8].index.values)
 
-	X = np.asarray(X).astype('float32')
-	y = np.asarray(y)
+    X = np.asarray(X).astype('float32')
+    y = np.asarray(y)
 
-	return X, y, idx
+    return X, y, idx
 
 def convert_string_to_datetime(dataset):
     expt = 0
@@ -116,11 +175,11 @@ def convert_string_to_datetime(dataset):
         s = idx.split(" ")
         hr = int(s[-1])-1
         if hr > 23:
-            print(dt)
+            # print(dt)
             dt_list.append(None)
             continue
-        if expt != hr:
-            print(dt)
+        # if expt != hr:
+            # print(dt)
         expt = (hr + 1) % 24
         dt = s[0] + " " + str(hr)
         s2 = s[0].split("/")
@@ -129,9 +188,9 @@ def convert_string_to_datetime(dataset):
         year = s2[2]
         dt_idx = datetime.datetime.strptime(dt, '%m/%d/%y %H')
         if prev_d != year:
-            print(year)
+            # print(year)
             prev_d = year
-            print(count/24)
+            # print(count/24)
             count = 0
         count += 1
         dt_list.append(dt_idx)
