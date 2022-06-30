@@ -31,7 +31,7 @@ In this toolkit, we provide reference implementations of a range of peak forecas
 	* SARIMA
 	* SVR-based demand forecasting
 
-PeakTK also includes reference energy datasets for for experimentation, quantitiave comparisons as follows:
+PeakTK also includes reference energy datasets for for experimentation and quantitiave comparisons as follows:
 
 * ISO New England dataset  
 * ESO dataset
@@ -39,12 +39,30 @@ PeakTK also includes reference energy datasets for for experimentation, quantiti
 
 All datasets come with weather dataset
 
-# Installation
+# Work in Progress
 
-We will provide `pip install` after published.
+Here is the list that we currently are working on and will finish it:
+
+- [ ] Fixing `pip install`. We are trying to make sure that it work on Apple M1.
+- [ ] Updating the unified interface. (A few algorithms left) 
+- [ ] Adding Sphinx docs
+- [ ] Adding example for all type of peak forecasting algorithms.
 
 
+# Future work
 
+Here is the list of things that we think it would be great to have:
+
+- [ ] Support scikit learn's hyperparameter tuning
+- [ ] Support walk forward validation
+- [ ] And, of course, have more algorithms
+
+If you would like to contribute, please feel free to send a pull request and email us! 
+
+# Bug report
+
+If you found bug or need help with the toolkit, please feel free to email [us] 
+(<phuthipong@cs.umass.edu>).
 
 
 

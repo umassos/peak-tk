@@ -7,18 +7,30 @@ import datetime
 from peaktk.preprocessing import preprocessing
 from sklearn.preprocessing import MinMaxScaler
 
-def train_test_split(daily_df):
-    # Pre-processing
-    # 1: Min Max Scale
-    scaler = MinMaxScaler(feature_range=(0, 1))
-    scaled_data = scaler.fit_transform(daily_df.values)
-    # 2: merge with same day last week X: 48 hr, y: 24 hr
-    db_df = pd.DataFrame(scaled_data)
-    db_df.columns = daily_df.columns
-    X_scaled, y_scaled, idx_scaled = preprocessing.combine_seven_days_before_all(db_df, "Load")
-    X, y, idx = preprocessing.combine_seven_days_before_all(daily_df, "Load")
 
-    return (X_scaled, y_scaled, idx_scaled, X, y, idx, scaler)
+def train_test_split(X, y, idx, test_size=365):
+    # train
+    X_train = X[:-test_size]
+    y_train = y[:-test_size]
+    idx_train = idx[:-test_size]
+    # test
+    X_test = X[-test_size:]
+    y_test = y[-test_size:]
+    idx_test = idx[-test_size:]
+    return (X_train, X_test, y_train, y_test, idx_train, idx_test)
+
+# def train_test_split(daily_df):
+#     # Pre-processing
+#     # 1: Min Max Scale
+#     scaler = MinMaxScaler(feature_range=(0, 1))
+#     scaled_data = scaler.fit_transform(daily_df.values)
+#     # 2: merge with same day last week X: 48 hr, y: 24 hr
+#     db_df = pd.DataFrame(scaled_data)
+#     db_df.columns = daily_df.columns
+#     X_scaled, y_scaled, idx_scaled = preprocessing.combine_seven_days_before_all(db_df, "Load")
+#     X, y, idx = preprocessing.combine_seven_days_before_all(daily_df, "Load")
+
+#     return (X_scaled, y_scaled, idx_scaled, X, y, idx, scaler)
 
 
     # X_train = X_scaled[:-366]
@@ -120,15 +132,15 @@ def convert_string_to_datetime(dataset):
         try:
             hr = int(s[-1])-1
         except:
-            print(s)
+            # print(s)
             dt_list.append(None)
             continue
         if hr > 23:
-            print(dt)
+            # print(dt)
             dt_list.append(None)
             continue
-        if expt != hr:
-            print(dt)
+        # if expt != hr:
+        #     print(dt)
         expt = (hr + 1) % 24
         dt = s[0] + " " + str(hr)
         s2 = s[0].split("/")
@@ -137,9 +149,9 @@ def convert_string_to_datetime(dataset):
         year = s2[2]
         dt_idx = datetime.datetime.strptime(dt, '%m/%d/%Y %H')
         if prev_d != year:
-            print(year)
+            # print(year)
             prev_d = year
-            print(count/24)
+            # print(count/24)
             count = 0
         count += 1
         dt_list.append(dt_idx)
@@ -227,3 +239,16 @@ def convert_hourly_to_daily_data(data_df):
     daily_df.index.name = "date"
 
     return daily_df
+
+def prepare_vpeak_training_data(daily_df, current_year=2020):
+    historical_df = daily_df[daily_df.index.year < current_year][["Load"]]
+    historical_daily_demand = []
+    one_year_daily_demand = []
+    for month in range(1, 13):
+        monthly_df = historical_df[(historical_df.index.month==month)]
+        historical_daily_demand.append(monthly_df["Load"].tolist())
+        
+        monthly_df = historical_df[(historical_df.index.month==month) & (historical_df.index.year==current_year-1)]
+        one_year_daily_demand.append(monthly_df["Load"].tolist())
+
+    return (historical_daily_demand, one_year_daily_demand)

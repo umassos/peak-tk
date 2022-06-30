@@ -13,6 +13,91 @@ class Probabilistic_Approach:
     def __init__(self):
         pass
 
+    def fit(self, historical_df, current_year, N=5, look_ahead=3, quantile=0.83, threshold_p=0.1, delta=0):
+        # counter = 0
+
+        self.peak_day_picked = 0
+        self.prev_month = -1
+        self.N = N
+        self.look_ahead = look_ahead
+        self.quantile = quantile
+        self.threshold_p = threshold_p
+        self.delta = delta
+        self.historical_df = historical_df
+        
+
+        self.historical_month_df_list = []
+        self.threshold_list = []
+        self.hist_peak_load_list = []
+
+        for month in range(1, 13):
+
+            peak_day_picked = 0
+            # monthly_df = daily_df[(daily_df.index.month==month) & (daily_df.index.year<current_year)].copy()
+            # daily_temperature = monthly_df["MaxTemp"].values
+            historical_month_df = self.historical_df[(self.historical_df.index.month==month) & (self.historical_df.index.year<current_year)]
+            # monthly_df = daily_df[(daily_df.index.month==month) & (daily_df.index.year<current_year)].copy()
+            
+            threshold = historical_month_df["MaxPower"].quantile(quantile)
+            # hist_peak_load = []
+            # MODIFY TO FIX ONTARIO COLD START
+            hist_peak_load = historical_month_df.nlargest(N*2, 'MaxPower')['MaxPower'].values[:N]
+
+            self.historical_month_df_list.append(historical_month_df)
+            self.threshold_list.append(threshold)
+            self.hist_peak_load_list.append(hist_peak_load)
+
+        return self
+
+    def predict(self, predicted_demand, tomorrow_temperature, current_date):
+        is_pred_peak = False
+
+        current_month = self.current_date.month
+
+        if prev_month != current_month:
+            # reset
+            self.reset_month()
+
+        monthly_df = self.monthly_df_list[current_month-1]
+        historical_month_df = self.historical_month_df_list[current_month-1]
+        threshold = self.threshold_list[current_month-1]
+        hist_peak_load = self.hist_peak_load_list[current_month-1]
+
+        daily_load = predicted_demand[0]
+        # for idx, daily_load in enumerate(y_pred_month[month]):
+
+        is_extreme_weather = self.check_extreme_weather(tomorrow_temperature, historical_month_df, self.quantile)
+
+        idx = current_date.day
+
+        if daily_load > threshold or is_extreme_weather:
+            # FIND STD, PRED_DEMAND
+            std = []
+            pred_demand = []
+            # std.append(historical_month_df[historical_month_df.index.day == idx+1]["MaxPower"].std())
+            std.append(self.historical_df[self.historical_df.index.dayofyear == idx+1]["Load"].std())
+            pred_demand.append(daily_load)
+            for j in range(1, look_ahead):
+                if j < len(predicted_demand):
+                    std.append(historical_month_df[historical_month_df.index.day == idx+1+j]["MaxPower"].std())
+                    pred_demand.append(y_pred_month[month][idx+j])
+            std = np.cumsum(std)
+            # PREDICT
+            is_pred_peak = self.compute_prob(N, look_ahead, pred_demand, std, hist_peak_load, threshold_p)
+            pred_peak.append(is_pred_peak)
+            ## APPEND NEW PEAK DAY
+            if is_pred_peak:
+                peak_day_picked += 1
+                if peak_day_picked >= (N+delta):
+                    pred_peak += [False]*(num_day_in_month-(idx+1))
+                    break
+            #     hist_peak_load.append(daily_load)
+            # hist_peak_load.sort(reverse=True)
+
+            continue
+
+        return is_pred_peak
+
     def probabilistic_model(self, y_pred_month, daily_df, current_year, N=5, look_ahead=3, quantile=0.83, threshold_p=0.1, delta=0):
         pred_peak = []
         # gt_peak = []
@@ -106,6 +191,8 @@ class Probabilistic_Approach:
         # print("#"*20)
         return pred_peak
 
+    def reset_month(self):
+        self.peak_day_picked = 0
 
     def check_extreme_weather(self, today_temp, month_temp, quant=0.9):
         if today_temp < month_temp["MaxTemp"].quantile(1-quant):
@@ -196,15 +283,5 @@ class Probabilistic_Approach:
     def prod(self, iterable):
         return reduce(operator.mul, iterable, 1) 
 
-    
-    def train(self, X_train, y_train):
-        # refactor from probabilistic model
-        # create a model
-        pass
-
-    def predict(self, X):
-        # refactor from probabilistic model
-        # predict peak or not peak
-        pass
     # p, r, a = probabilistic_model(y_pred_month, y_true, daily_df, N=5, look_ahead=3, quantile=0.9, threshold_p=0.1, delta=0)
     
