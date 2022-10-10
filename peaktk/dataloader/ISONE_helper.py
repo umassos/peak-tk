@@ -96,9 +96,10 @@ def load_data_hourly(DEMAND_PATH, WEATHER_PATH, years=[2018, 2019, 2020]):
 
     hourly_df = pd.concat([load_df2, weather_df2], axis=1, join="inner")
 
-    # input_df = helper.create_all_features(hourly_df)
-    # concat_df = helper.combining_hourly_data(input_df)
-    # concat_df = helper.fix_dst(input_df)
+    hourly_df = helper.create_all_features(hourly_df)
+    # print(hourly_df.columns)
+    # print("HELLO")
+    hourly_df = helper.fix_dst(hourly_df)
     
     return hourly_df
 
