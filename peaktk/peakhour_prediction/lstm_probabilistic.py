@@ -1,9 +1,7 @@
-
-
 import numpy as np
 
 from keras import regularizers
-from tensorflow.keras.optimizers import adam_v2
+from keras.optimizers import adam_v2
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
@@ -14,7 +12,7 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 
 class LSTMProbabilistic(BaseEstimator):
-    """ Peak Hours of the Day Prediction - Long Short Term Memory
+    """ Peak Hours of the Day Prediction (Probabilistic version) - Long Short Term Memory
 
     A class to train an LSTM model and use the model to predict N peak hours of the day.
 
@@ -44,9 +42,9 @@ class LSTMProbabilistic(BaseEstimator):
     >>> from peaktk.peakhour_prediction import LSTMProbabilistic
     >>> X = ...
     >>> y = ...
-    >>> estimator = LSTMDemandPrediction()
+    >>> estimator = LSTMProbabilistic()
     >>> estimator.fit(X_train, y_train)
-    LSTMDemandPrediction()
+    LSTMProbabilistic()
     >>> estimator.predict(X_test)
     [...]
     """

@@ -52,7 +52,7 @@ def create_dataset(scaled_data, y_columns="Load"):
 
     return X, y, idx
 
-def create_dataset_hourly(data_df, y_column):
+def create_dataset_hourly(data_df, y_column="Load"):
 
     X = []
     y = []
